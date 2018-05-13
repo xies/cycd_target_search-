@@ -16,18 +16,27 @@ import seaborn as sb
 import matplotlib.pyplot as plt
 import os
 
+# Load excel file of all putative targets
+filename = '/data/cycd_targets/1-s2.0-S1535610811003606-mmc2.xls'
+df = pd.read_excel(filename)
+up = df['UniProKB/SWISS-PROT'].str.split(', ',1).tolist()[1:] # split the Uniprot entry field
+up = pd.DataFrame(np.vstack( up[1:] ), columns=['Entry name','Entry']) # Extract into new dataframe
+entries = up['Entry'].str.strip(' ') # Make sure UniProt entry ID has no spaces
+
 # Load hand-curated CycD putative target list
 filename = '/data/cycd_targets/cycd_target_uniprot.txt'
 targetIDs = pd.read_csv(filename)
-entries = targetIDs['Entry']
+already_seen = targetIDs['Entry']
+
+# Do a merge to see what's not already seen in the hand-curated list
+merged = set(entries) - set(already_seen)
 
 # Fetch and write as FASTA
-out_name = '/data/cycd_targets/cycd_target_uniprot.fasta'
-upData = uniprot.batch_uniprot_metadata(entries, 'cache')
-uniprot.write_fasta(out_name, upData, entries)
+out_name = '/data/cycd_targets/cycd_target_uniprot_wider.fasta'
+upData = uniprot.batch_uniprot_metadata(merged, 'cache')
+uniprot.write_fasta(out_name, upData, merged)
 
 split_fastas(out_name)
-
 
 
 PSIPRED_DIR = '/data/cycd_targets/cycd_target_uniprot_individuals'

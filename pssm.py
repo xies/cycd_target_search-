@@ -43,7 +43,7 @@ pssm = pwm.log_odds()
 
 # Load cycD target sequences
 # Can't use motifs pssm calculate function but can use it as a dictionary
-filename = '/data/cycd_targets/cycd_target_uniprot.fasta'
+filename = '/data/cycd_targets/cycd_target_uniprot_wider.fasta'
 ts = SeqIO.parse(filename,'fasta')
 targets  = {}
 scores = {}
@@ -52,7 +52,7 @@ for rec in ts:
     scores[rec.id] = calculate_scores(pssm, rec.seq )
     targets[rec.id] = rec
 
-    
+
 # Visualize the distribution of scores
 fig,ax = plt.subplots()
 for rec in scores:    
@@ -69,12 +69,12 @@ for (k,v) in sorted_scores:
     sorted_targets.append(targets[k])
 
 # Select one ID to visualize:
-idOI = 'P28749'
+idOI = 'P18850'
 plt.plot(scores[idOI])
 plt.title(targets[idOI].name)
 
 # --- Load SS pred
-filename = '/data/cycd_targets/cycd_target_uniprot_individuals/psipred.fasta'
+filename = '/data/cycd_targets/cycd_target_uniprot_wider_individuals/psipred.fasta'
 ss = SeqIO.parse(filename,'fasta')
 secondary = {}
 for rec in ss:
@@ -86,18 +86,42 @@ hit_seqs = {}
 for rec in scores:
     pos = np.where(scores[rec] > threshold)[0]
     if pos.size > 0:
-        hits = []
-        for p in pos:
-            hits.append(targets[rec].seq[p : pssm.length + p].tostring())
-            hits.append(secondary[rec].seq[p : pssm.length + p].tostring())
-        hit_seqs[rec] = hits
+        try:
+            hits = []
+            for p in pos:
+                # Record the seq, the second struct, and pssm scores
+                hits.append(targets[rec].seq[p : pssm.length + p].tostring())
+                hits.append(secondary[rec].seq[p : pssm.length + p].tostring())
+                hits.append(scores[rec][p])
+            hit_seqs[rec] = hits
+        except KeyError:
+            continue
+        
 
+# Print to shell (useful for small number of candidates)
 for k in hit_seqs:
     print '---'
     print targets[k].description
     print hit_seqs[k]
     
-    
+# Further filter by a threshold of helicity and record all as dataframe
+filtered_hits = []
+for k in hit_seqs:
+    hits = hit_seqs[k]
+    hits = zip(hits[::3],hits[1::3],hits[2::3])
+    for (s,h,score) in hits:
+        helicity = np.array( list(h) )
+        I = helicity == 'H'        
+        if sum(I) > 8: # If greater than 8 were helical, check if there are breaks in helicity
+            hbreak = np.diff(np.cumsum(I))
+            if all(hbreak[1:-1] != 0):  # breaks other than ends
+                # Grab the sequence metadata
+                name = targets[k].name
+                description = targets[k].description
+                filtered_hits.append( (k,s,h,score,name,description) )
+df = pd.DataFrame(filtered_hits,columns=['Entry','Sequence','Helicity','PSSM score','Name','Description'])
+
+df.sort_values('PSSM score',ascending=False).to_csv( os.path.join(os.path.dirname(filename),'hits.csv'),sep='\t')
 
 # ---
     

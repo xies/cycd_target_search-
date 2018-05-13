@@ -8,10 +8,10 @@ Created on Fri May  4 17:38:57 2018
 
 import numpy as np
 import pandas as pd
-import os, re, copy
-from Bio import SeqIO,AlignIO,Seq
+import os
+from Bio import SeqIO,AlignIO,Seq,SeqRecord
 
-PSIPRED_DIR = '/data/cycd_targets/cycd_target_uniprot_individuals'
+PSIPRED_DIR = '/data/cycd_targets/cycd_target_uniprot_wider_individuals'
 
 seqs = []
 
@@ -19,15 +19,19 @@ for filename in os.listdir(PSIPRED_DIR):
     if filename.endswith('.ss2'):
         print 'Working on ', filename
         fastaname,ext = os.path.splitext(filename)
-        
-        filename = os.path.join(UNGAPPED_DIR,filename)
+        filename = os.path.join(PSIPRED_DIR,filename)
         
         #Load PSIPRED VFORMAT in a sane way to extract only relevant info
         df = pd.read_csv(filename,header=0, delim_whitespace=True,skiprows=0,
                          names=['position','AA','prediction'],usecols=[0,1,2], index_col=0)
         
-        seq = Seq.Seq(''.join(df.prediction))
-        seq.id = os.path.splittext()
+        s = Seq.Seq(''.join(df.prediction))
+        entry = os.path.splitext(fastaname)[0]
+
+        seq = SeqIO.read( os.path.splitext(filename)[0] ,'fasta')
+        seq.seq = s
+        seqs.append(seq)
+        
         # Load the same GAPPED sequence file
 #        seq = SeqIO.read(os.path.join(GAPPED_DIR,fastaname),'fasta')
 #        seq_ss = copy.deepcopy(seq) # deepcopy to get a hard copy
@@ -41,7 +45,5 @@ for filename in os.listdir(PSIPRED_DIR):
 #        seq_ss.id = os.path.splitext(fastaname)[0]
 #        seqs.append(seq_ss)
 #        
-    else:
-        continue
 
-SeqIO.write(seqs,os.path.join( GAPPED_DIR,'psipred.fasta' ),'fasta')
+SeqIO.write(seqs,os.path.join( PSIPRED_DIR,'psipred.fasta' ),'fasta')
