@@ -38,4 +38,12 @@ def split_fastas(filename):
        with open(rec_filename,'w') as output_handle:
            SeqIO.write(rec,output_handle,'fasta')
            
-           
+def clean_uniprot_entry(badentry):
+    # Grab the UniProt Entry field from the sp|ENTRY|NAME format of downloaded FASTAs
+    s = badentry.split('|')
+    if len(s) > 2:
+        goodentry = s[1]
+    else:
+        goodentry = badentry
+    return goodentry
+

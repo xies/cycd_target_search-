@@ -26,13 +26,18 @@ entries = up['Entry'].str.strip(' ') # Make sure UniProt entry ID has no spaces
 # Load hand-curated CycD putative target list
 filename = '/data/cycd_targets/cycd_target_uniprot.txt'
 targetIDs = pd.read_csv(filename)
-already_seen = targetIDs['Entry']
+already_seen = pd.concat((targetIDs['Entry'],entries))
+
+# Load hit list from PSSM
+filename = '/data/cycd_targets/hsap_proteome/hsap_hits>20.csv'
+targetIDs = pd.read_csv(filename,sep='\t')
+entries = targetIDs['Entry']
 
 # Do a merge to see what's not already seen in the hand-curated list
 merged = set(entries) - set(already_seen)
 
 # Fetch and write as FASTA
-out_name = '/data/cycd_targets/cycd_target_uniprot_wider.fasta'
+out_name = '/data/cycd_targets/hsap_hits>20.fasta'
 upData = uniprot.batch_uniprot_metadata(merged, 'cache')
 uniprot.write_fasta(out_name, upData, merged)
 
