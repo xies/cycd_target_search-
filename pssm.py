@@ -15,7 +15,7 @@ import pandas as pd
 import seaborn as sb
 import matplotlib.pyplot as plt
 import os
- 
+from random import shuffle
 
 # -----
 
@@ -43,7 +43,7 @@ pssm = pwm.log_odds()
 
 # Load cycD target sequences
 # Can't use motifs pssm calculate function but can use it as a dictionary
-filename = '/data/cycd_targets/cycd_target_uniprot_wider.fasta'
+filename = '/data/database/uniprot-reviewed%3Ayes+AND+proteome%3Aup000005640.fasta'
 ts = SeqIO.parse(filename,'fasta')
 targets  = {}
 scores = {}
@@ -73,7 +73,23 @@ idOI = 'P18850'
 plt.plot(scores[idOI])
 plt.title(targets[idOI].name)
 
-# --- Load SS pred
+# Estimate PSSM background with randomized sequences
+# Concatenate all sequences
+randseq = []
+for rec in targets:
+    randseq.append( targets[rec].seq.tostring() )
+randseq = ''.join(randseq)
+randseq = list(randseq)
+shuffle(randseq)
+randseq = ''.join(randseq) # in-place
+randscores = calculate_scores(pssm,randseq)
+mean_randscore = np.mean(randscores)
+std_randscore = np.std(randscores)
+print 'Mean random score: ', mean_randscore
+print 'Std random score: ', std_randscore
+print '3.5 std above mean: ', mean_randscore + 3.5 * std_randscore
+
+# --- Load SS pred ----
 filename = '/data/cycd_targets/cycd_target_uniprot_wider_individuals/psipred.fasta'
 ss = SeqIO.parse(filename,'fasta')
 secondary = {}
