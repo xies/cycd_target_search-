@@ -45,7 +45,7 @@ df.to_csv(filename)
 
 # Load cycD target sequences
 # Can't use motifs pssm calculate function but can use it as a dictionary
-filename = '/data/cycd_targets/hsap_proteome/hsap_proteome.fasta'
+filename = '/data/cycd_targets/cycd_target_uniprot_wider.fasta'
 ts = SeqIO.parse(filename,'fasta')
 targets  = {}
 scores = {}
