@@ -17,7 +17,7 @@ import os
 #scores = load...
 
 # --- Load SS pred ----
-filename = '/data/cycd_targets/cycd_target_uniprot_wider_individuals/psipred.fasta'
+filename = '/data/cycd_targets/putative_targets/psipred.fasta'
 ss = SeqIO.parse(filename,'fasta')
 secondary = {}
 for rec in ss:
@@ -25,7 +25,7 @@ for rec in ss:
 
 
 # --- Filter for hits above threshold
-threshold = 5
+threshold = 3
 hit_seqs = []
 for rec in scores:
     pos = np.where(scores[rec] > threshold)[0]
@@ -47,8 +47,23 @@ for rec in scores:
                     desc = targets[rec].description
                     hit_seqs.append((rec,s.tostring(),h,score,name,desc))
 
+#---- save as csv via DataFrames ---
 df = pd.DataFrame(hit_seqs,columns=['Entry','Sequence','Helicity','PSSM score','Name','Description'])
+df = df.sort_values('PSSM score',ascending=False)
+df.to_csv( os.path.join(os.path.dirname(filename),'hits.csv'),sep='\t')
 
-df.sort_values('PSSM score',ascending=False).to_csv( os.path.join(os.path.dirname(filename),'hits.csv'),sep='\t')
 
 
+# --- Stringently filter only for F/L-L-R
+flr = df[df['Sequence'].apply(flr_filter)]
+flr.to_csv( os.path.join(os.path.dirname(filename),'flr.csv'),sep='\t')
+
+def flr_filter(seq):
+    s = np.array( list(seq))
+    return (s[0] == 'F' or s[0] == 'L') and s[4] == 'L' and s[11] == 'R'
+    
+        
+        
+        
+        
+    
