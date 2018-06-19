@@ -47,3 +47,12 @@ def clean_uniprot_entry(badentry):
         goodentry = badentry
     return goodentry
 
+
+def write_dict_to_csv(dict,filename):
+    # Save dictionary for future use
+    import csv
+    with open(filename,'wb') as csv_file:
+        writer = csv.writer(csv_file)
+        for k,v in dict.items():
+            writer.writerow([k,v])
+
